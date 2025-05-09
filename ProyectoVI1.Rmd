@@ -1,0 +1,303 @@
+---
+title: "Proyecto1"
+output: html_document
+date: "2025-05-07"
+---
+
+# **Introduccion**
+
+Aqui va la intro  
+
+
+## **Graficas univariable**
+- Primera grafica  
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#Primero se cargan los datos y librerias
+library(ggplot2)
+library(GGally)
+library(dplyr)
+library(plotly)
+
+#Se cargan los datos
+datos <- read.csv("Crime_Data_from_2020_to_Present_20250503.csv")
+
+datos$HoraReal <- sprintf("%04d", datos$TIME.OCC)  # Asegura que tenga 4 dígitos
+datos$HoraReal <- substr(datos$HoraReal, 1, 2)     # Toma solo las dos primeras cifras (hora)
+datos$HoraReal <- as.numeric(datos$HoraReal)        # Convierte a número
+
+
+grafica_hora_uni <- ggplot(datos, aes(x = HoraReal)) +
+  geom_histogram(binwidth = 1, fill = "skyblue", color = "black") +
+  labs(title = "Crímenes por Hora del Día",
+       x = "Hora del día (24h)",
+       y = "Cantidad de crímenes") +
+  scale_x_continuous(breaks = 0:23)
+
+grafica_hora_uni <- ggplotly(grafica_hora_uni, tooltip = c("x", "y"))
+
+grafica_hora_uni
+```
+
+- Segunda grafica  
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(ggplot2)
+library(plotly)
+
+datos <- read.csv("Crime_Data_from_2020_to_Present_20250503.csv")
+crimenes <- table(datos$Crm.Cd.Desc) #agrupamos los crimenes
+
+#dejamos los que tienen mas de 40 mil casos
+crimenes_filtrados <- subset(crimenes, crimenes > 40000)
+
+crimenes_df <- as.data.frame(crimenes_filtrados) #convertimos a df
+colnames(crimenes_df) <- c("Crimen", "Conteo")
+
+grafica <- ggplot(crimenes_df, aes(x = Crimen, y = Conteo)) +
+           geom_bar(stat = "identity", fill = "steelblue") +
+           theme_minimal() +
+           coord_flip() +  # gira el gráfico
+           labs(title = "Crímenes con más de 40,000 casos", x = "Tipo de Crimen", y = "Número de Casos")
+
+ggplotly(grafica)
+```
+
+- Tercera grafica  
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#Primero se cargan los datos y librerias
+library(ggplot2)
+library(GGally)
+library(dplyr)
+library(plotly)
+
+#Se cargan los datos
+datos <- read.csv("Crime_Data_from_2020_to_Present_20250503.csv")
+
+top_10 <- datos %>%
+  count(LOCATION, sort = TRUE) %>%
+  top_n(10, n)
+
+grafica <- ggplot(top_10, aes(x = reorder(LOCATION, -n), y = n)) +
+  geom_bar(stat = "identity", fill = "skyblue", color = "black") +
+  labs(title = "Top 10 Ubicaciones con Más Crímenes",
+       x = "Ubicación",
+       y = "Cantidad de crímenes") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplotly(grafica)
+```
+
+## **Graficas bidimensional**
+- Primera grafica  
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#Primero se cargan los datos y librerias
+library(ggplot2)
+library(plotly)
+
+datos <- read.csv("Crime_Data_from_2020_to_Present_20250503.csv")
+
+datos_validos <- subset(datos, Vict.Age > 0)
+
+# Calcular el conteo por tipo de crimen
+conteo_crimenes <- table(datos_validos$Crm.Cd.Desc)
+
+# Obtener solo los crímenes con más de 30,000 casos
+crimenes_frecuentes <- names(conteo_crimenes[conteo_crimenes > 40000])
+
+# Filtrar los datos solo para esos crímenes
+datos_filtrados <- subset(datos_validos, Crm.Cd.Desc %in% crimenes_frecuentes)
+
+# Graficar el boxplot
+grafico <- ggplot(datos_filtrados, aes(x = Crm.Cd.Desc, y = Vict.Age)) +
+  geom_boxplot(fill = "lightblue") +
+  coord_flip() +
+  labs(
+    title = "Distribución de edad de víctimas por tipo de crimen",
+    x = "Tipo de crimen",
+    y = "Edad de la víctima"
+  ) +
+  theme_minimal() +
+  theme(axis.text.y = element_text(size = 6))
+
+ggplotly(grafico)
+
+```
+
+
+- Segunda grafica  
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#Primero se cargan los datos y librerias
+library(ggplot2)
+library(plotly)
+
+datos <- read.csv("Crime_Data_from_2020_to_Present_20250503.csv")
+
+# Contar cuántas veces aparece cada arma
+conteo <- table(datos$Weapon.Desc)
+conteo <- conteo[names(conteo) != ""]  # eliminar las entradas vacías
+
+# Obtener las 8 armas más comunes 
+conteo_filtrado8 <- names(sort(conteo, decreasing = TRUE)[1:8])
+
+# Creamos un nuevo data frame con las siguientes condiciones:
+# - El arma utilizada (Weapon.Desc) está entre las 8 más frecuentes (guardadas en conteo_filtrado8)
+# - El sexo de la víctima (Vict.Sex) es masculino ("M") o femenino ("F")
+datos_filtrado <- subset(datos, Weapon.Desc %in% conteo_filtrado8 & Vict.Sex %in% c("M", "F"))
+
+grafico <- ggplot(datos_filtrado, aes(x = Weapon.Desc, fill = Vict.Sex)) +
+  geom_bar(position = "fill") +
+  theme_minimal() +
+  coord_flip() +
+  labs(title = "Sexo de la víctima según las 8 armas más usadas", 
+       x = "Arma usada", 
+       y = "Número de casos", 
+       fill = "Sexo")
+
+ggplotly(grafico)
+
+
+```
+
+## **Grafica multimidensional**
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#Primero se cargan los datos y librerias
+#Primero se cargan los datos y librerias
+library(ggplot2)
+library(GGally)
+library(dplyr)
+library(plotly)
+
+#Se cargan los datos
+datos <- read.csv("C:\\Users\\Felix Gabriel\\Downloads\\Crime_Data_from_2020_to_Present_20250503.csv")
+set.seed(2)
+
+datos_filtrados <- datos %>%
+  filter(!is.na(DATE.OCC)) %>%
+  filter(Vict.Sex %in% c("M", "F")) %>%
+  filter(Crm.Cd %in% c(230, 624)) %>%
+  slice_sample(n = 100)  # tomar una muestra aleatoria para aligerar carga
+
+
+grafica <- ggplot(datos_filtrados, aes(x = AREA.NAME, y = Vict.Age, color = Vict.Sex, size = DATE.OCC)) +
+  geom_point(alpha = 0.5) +
+  theme_minimal() +
+  labs(
+    title = "Distribución de Edad por Área y Sexo de la Víctima",
+    x = "Área",
+    y = "Edad de la Víctima")
+
+plotly::ggplotly(grafica)
+```
+
+## **Grafica facetica**
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(ggplot2)
+library(GGally)
+library(dplyr)
+library(plotly)
+library(lubridate)
+
+# Cargar datos
+datos <- read.csv("Crime_Data_from_2020_to_Present_20250503.csv")
+
+# Convertir a fecha (sin hora)
+datos$DATE.OCC <- as.Date(datos$DATE.OCC, format = "%m/%d/%Y")
+
+# Crear columna con nombre de mes y año
+datos$MesNombre <- format(datos$DATE.OCC, "%B %Y")  # Ej: "Enero 2022"
+
+# Filtrar y tomar muestra
+set.seed(1)
+
+datos_filtrados <- datos %>%
+  filter(!is.na(DATE.OCC)) %>%
+  filter(AREA.NAME %in% c("Hollywood", "Central","Harbor","Newton")) %>%
+  filter(Vict.Sex %in% c("M", "F")) %>%
+  filter(DATE.OCC >= as.Date("2022-01-01")) %>%
+  slice_sample(n = 1000)
+
+# Para que los meses salgan ordenados cronológicamente
+datos_filtrados$MesNombre <- factor(datos_filtrados$MesNombre,
+                                    levels = unique(format(sort(unique(datos_filtrados$DATE.OCC)), "%B %Y")))
+
+# Crear gráfico
+grafico <- ggplot(datos_filtrados, aes(x = MesNombre, fill = Vict.Sex)) +
+  geom_bar() +
+  facet_wrap(~ AREA.NAME, scales = "free_y") +
+  theme_minimal() +
+  labs(
+    title = "Crímenes por mes, área y género (Muestra de 1000)",
+    x = "Mes del crimen",
+    y = "Cantidad",
+    fill = "Género"
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotar etiquetas para mejor visibilidad
+
+# Hacer interactivo
+ggplotly(grafico)
+```
+
+
+## **Grafica compuesta**
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(plotly)
+library(dplyr)
+
+datos <- read.csv("Crime_Data_from_2020_to_Present_20250503.csv")
+
+# Filtrar estados
+datos_filtrados <- datos[datos$Status %in% c("IC", "AO","AA"), ]
+
+# Total de delitos por ciudad
+totales <- table(datos$AREA.NAME)
+top15_ciudades <- names(sort(totales, decreasing = TRUE))[1:15]
+
+# Filtrar para las 15 ciudades más frecuentes
+totales_top <- totales[top15_ciudades]
+filtrados_top <- datos_filtrados[datos_filtrados$AREA.NAME %in% top15_ciudades, ]
+
+# Conteo por ciudad y estado
+conteo_status <- table(filtrados_top$AREA.NAME, filtrados_top$Status)
+conteo_df <- as.data.frame(conteo_status)
+colnames(conteo_df) <- c("Ciudad", "Estado", "Cantidad")
+
+# Convertir totales a data frame
+totales_df <- data.frame(Ciudad = names(totales_top),
+                         Total = as.integer(totales_top))
+
+# Crear gráfico interactivo paso a paso usando plot_ly
+graficoI <- plot_ly()  # Se inicializa un objeto vacío de plotly para ir agregando trazas (barras, líneas, etc.)
+
+# Añadir barras para el total de delitos por ciudad
+graficoI <- add_bars(graficoI, data = totales_df, x = ~Ciudad, y = ~Total, name = "Total", marker = list(color = 'lightblue'))
+
+# Añadir líneas y puntos para cada estado (IC, AO, AA)
+estados <- unique(conteo_df$Estado)
+for (estado in estados) {
+  df_estado <- conteo_df %>% filter(Estado == estado)
+  
+  graficoI <- add_trace(graficoI,
+                        data = df_estado,
+                        x = ~Ciudad,
+                        y = ~Cantidad,
+                        type = 'scatter',
+                        mode = 'lines+markers',
+                        name = estado)
+}
+
+# Configurar título, etiquetas y estilo del eje Y para evitar notación compacta como "46.9k"
+graficoI <- layout(graficoI,
+                   title = "Delitos totales por ciudad y casos IC / AO / AA",
+                   xaxis = list(title = "Ciudad"),
+                   yaxis = list(title = "Cantidad de delitos", tickformat = ",d"),
+                   barmode = 'group')
+
+# Mostrar el gráfico
+graficoI
+```
+
+# **Conclusion**
