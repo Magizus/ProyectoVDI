@@ -1,0 +1,499 @@
+---
+title: "Proyecto1"
+output: html_document
+date: "2025-05-07"
+---
+
+Paricipantes:  
+Jose Andres Salazar Rodriguez -2022104584  
+Felix Gabriel Morales Cerdas - 2023218273  
+
+
+# **Introduccion**
+
+<span style="font-size:13pt">
+Utilizando el conjunto de datos "Crime Data from 2020 to Present" brindado por el Departamento de policía de Los Ángeles, se van a analizar multiples gráficos para poder estudiar y relacionar ciertos comportamientos dados en Estados Unidos.  
+Algunos de los datos que nos brinda este dataset son los siguientes:  
+- Áreas de departamentos policiales y zonas de Estados Unidos  
+-Fechas de crímenes  
+-Crímenes cometidos y sus códigos  
+-Edad y genero de las victimas  
+Y muchos datos más.
+</span>
+
+
+## **Graficas univariable**
+### Primera grafica  
+
+<span style="font-size:13pt">
+En este análisis abordamos la criminalidad en la ciudad de Los Ángeles, enfocándonos en los registros disponibles desde el año 2020 hasta la fecha. La finalidad es identificar patrones en el comportamiento delictivo a lo largo del día, lo cual puede aportar a estrategias de prevención y vigilancia.  
+Los valores seleccionados para esta gráfica fueron la variable TIME.OCC, que representa la hora en que ocurrió el crimen, y su frecuencia. Se eligió esta variable porque permite observar en qué momentos del día tienden a ocurrir más delitos, lo cual es relevante tanto para autoridades como para la población general.  
+El formato en el que se van a usar las horas es en el de 24 horas, siendo que, en este caso se van a usar de 0 a 23, siendo que 0 puede interpretarse como 0 o como 24.  
+</span>
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#Primero se cargan los datos y librerias
+library(ggplot2)
+library(GGally)
+library(dplyr)
+library(plotly)
+
+#Se cargan los datos
+datos <- read.csv("Crime_Data_from_2020_to_Present_20250503.csv")
+
+datos$HoraReal <- sprintf("%04d", datos$TIME.OCC)  # Asegura que tenga 4 dígitos
+datos$HoraReal <- substr(datos$HoraReal, 1, 2)     # Toma solo las dos primeras cifras (hora)
+datos$HoraReal <- as.numeric(datos$HoraReal)        # Convierte a número
+
+
+grafica_hora_uni <- ggplot(datos, aes(x = HoraReal)) +
+  geom_histogram(binwidth = 1, fill = "skyblue", color = "black") +
+  labs(title = "Crímenes por Hora del Día",
+       x = "Hora del día (24h)",
+       y = "Cantidad de crímenes") +
+  scale_x_continuous(breaks = 0:23)
+
+grafica_hora_uni <- ggplotly(grafica_hora_uni, tooltip = c("x", "y"))
+
+grafica_hora_uni
+```
+
+<span style="font-size:13pt">
+Con esta grafica lo más notable es lo siguiente:  
+- La hora en la que con más frecuencia ocurrieron robos es a las 12 del mediodía (12)  
+- La en la que menos ocurrieron robos fue a las 5 de la mañana (5)  
+</span>
+
+<span style="font-size:13pt">
+Se puede observar un comportamiento que existe cierto comportamiento entre un rango de horas definidos, estos rangos se encuentran desde las 12 am hasta las 11 am (11) y desde las 12 pm (0) hasta las 11 pm (23). Con el primer comportamiento que es el de las 12 am hasta las 11 am se puede notar que los crímenes se encuentran siempre por debajo de los 40000, siendo que 2 de estas horas solo lo superan por 3000 y la primera hora solamente lo hace por 12.   
+A diferencia de este rango se puede notar que en el segundo ocurre un comportamiento diferente, siendo que a partir de las 12 pm esta cantidad aumenta en grandes cantidades. A diferencia del anterior la cantidad de crímenes cometidos por día no bajan de los 45000, siendo la cantidad más común por encima de los 50000. 
+Curiosamente cada rango posee un comportamiento curioso en ambos datos, siendo que cada uno posee lo que se podría llamar como un minimo y un máximo en una de sus horas. El primer rango posee la hora con la menor cantidad de robos (5am), mientras que el segundo posee la hora con la mayor cantidad de robos (12pm).  
+Esta grafica ayuda a negar la creencia de que en la noche (desde las 18 hasta las 6) ocurre la mayor cantidad de crímenes, ya que gracias a esta podemos notar que el pico más bajo de crímenes se encuentra en ese rango, al contrario, la mayor cantidad de horas en las que ocurre los crímenes es en horas de la tarde (de 12 a 15) ocurre mayor cantidad crímenes, siendo que incluso entre esas horas se encuentra el pico más alto (siendo las 12).
+</span>
+
+### Segunda grafica  
+
+<span style="font-size:13pt">
+En este segundo análisis nos enfocamos en los tipos de crímenes más comunes registrados en Los Ángeles desde 2020 hasta la fecha. El objetivo es identificar cuáles son los delitos más frecuentes y así entender mejor las áreas que requieren mayor atención por parte de las autoridades.  
+La variable seleccionada fue "Crm.Cd.Desc", que representa la descripción del tipo de crimen. Se filtraron los delitos con más de 40,000 registros para centrarse únicamente en los más frecuentes. Esta decisión se tomó para facilitar el análisis visual y resaltar los crímenes que representan un mayor volumen dentro del total.
+</span>
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(ggplot2)
+library(plotly)
+
+datos <- read.csv("Crime_Data_from_2020_to_Present_20250503.csv")
+crimenes <- table(datos$Crm.Cd.Desc) #agrupamos los crimenes
+
+#dejamos los que tienen mas de 40 mil casos
+crimenes_filtrados <- subset(crimenes, crimenes > 40000)
+
+crimenes_df <- as.data.frame(crimenes_filtrados) #convertimos a df
+colnames(crimenes_df) <- c("Crimen", "Conteo")
+
+grafica <- ggplot(crimenes_df, aes(x = Crimen, y = Conteo)) +
+           geom_bar(stat = "identity", fill = "steelblue") +
+           theme_minimal() +
+           coord_flip() +  # gira el gráfico
+           labs(title = "Crímenes con más de 40,000 casos", x = "Tipo de Crimen", y = "Número de Casos")
+
+ggplotly(grafica)
+```
+
+<span style="font-size:13pt">
+Con la gráfica se puede observar que existen 10 tipos de crímenes diferentes, pero pesé a estar catalogados de manera diferente estos poseen una o varias similitudes, algunas de ellas pueden ser las siguientes:  
+- 3 de los 10 tipos de delitos estan muy relacionados con los vehículos, ya sea para robar pertenencias dentro de estos o robar partes, uno de estos delitos el vehículo es utilizado para realizar el robo.  
+- 7 de los delitos tiene que ver con robo de pertenencias, estos se efectúan ya sean a la fuerza o sin esta.  
+- Solo hay un delito de vandalismo, siendo que en este caso solo se registraron los crímenes realizados en las iglesias.  
+- El crimen Intimate partner es el único que tiene que ver violencia física o psicológica, el crimen con arma de fuego no se cuenta ya que este puede solo limitarse a solamente una amenaza.  
+</span>
+
+<span style="font-size:13pt">
+Ahora se va a hacer un análisis tomando en cuenta la cantidad de crímenes.  
+- Los crímenes que conllevan el robo de pertenencia o un vehículo mantienen una constancia de entre los 52 hasta 60. Con excepción de dos casos, siendo el robo de vehículos con más de 110000 y el robo desde vehículos siendo que apenas llega a los 40000.
+</span>
+
+### Tercera grafica  
+
+<span style="font-size:13pt">
+Para el tercer analisis se utilizaron las ciudades en las que ocurren la mayor cantidad de crimenes registradas por el departamento de policia de Los Angeles desde 2020. El objetivo de este analisis es encontrar que ciudades poseen la mayor cantidad de crimenes y si hay alguna relacion en la cercania de las ciudades.  
+La variable seleccionada en este caso es "LOCATION" que utiliza las calles de Estados Unidos. En este caso se redujo esta cantidad de calles a 10 para poder limitar la complejidad de este grafico y que se pueda entender mejor.
+</span>
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#Primero se cargan los datos y librerias
+library(ggplot2)
+library(GGally)
+library(dplyr)
+library(plotly)
+
+#Se cargan los datos
+datos <- read.csv("Crime_Data_from_2020_to_Present_20250503.csv")
+
+top_10 <- datos %>%
+  count(LOCATION, sort = TRUE) %>%
+  top_n(10, n)
+
+grafica <- ggplot(top_10, aes(x = reorder(LOCATION, -n), y = n)) +
+  geom_bar(stat = "identity", fill = "skyblue", color = "black") +
+  labs(title = "Top 10 Ubicaciones con Más Crímenes en los Angeles",
+       x = "Ubicación",
+       y = "Cantidad de crímenes") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplotly(grafica)
+```
+
+<span style="font-size:13pt">
+Con esta grafica se puede denotar que varias de las calles usadas tienen un nombre muy confuso e incluso algunas parecen repetirse, en este caso 6th ST, 6th, 7th, 7th St y dos Santa Monica BL. Esto es para poder especificar la diferencia entre estas:  
+- 6th ST y 7th ST: Son calles especificas ubicadas en Los Ángeles.  
+- 6th y 7th: No esta especifico, pero puede ser una calle ubicada en las cercanías o en el área de Los Ángeles.  
+- Las dos Santa Monica: Ya que es un area extensa puede que esta calle este dividida entre ciertas distancias.  
+</spàn>
+
+<span style="font-size:13pt">
+Ya explicado esto se puede analizar las calles de Los Ángeles. Se puede notar que de las 10 calles solamente ocurre que en una de estas la cantidad de crímenes superan los 2000 caso, siendo la calle Alameda ST, ya con los demas casos esta apenas y supera los 1700, por lo que se podria decir que hay un promedio de entre 1500 y 1400 entre todas estas calles, exceptuando a la que supera los 2000. Otro dato es que hay una calle que se repite tres calles que se repiten dos veces, esto ya fue explicado anteriormente, pero tomando en cuenta las que sabemos con exactitud que podria ser la misma calle, podemos notar que la única que lo hace es Santa Monica, siendo que esto podría significar que esta es la calle en las que más robos ocurren en Los Ángeles.  
+No se puede saber con exactitud si la cantidad de crímenes en las calles de Los Ángeles es mayor a la de calles en otros estados o ciudades, ya que este grafico solo está limitado a Los Ángeles.
+</span>
+
+## **Graficas bidimensional**
+### Primera grafica  
+
+<span style="font-size:13pt">
+En este gráfico de caja (boxplot) se representa la distribución de edades de las víctimas para los crímenes más frecuentes en Los Ángeles. Se utilizó la variable edad de la víctima (Vict.Age) en relación con la variable tipo de crimen (Crm.Cd.Desc) para observar si ciertos delitos afectan más a un rango de edad específico.  
+</span>
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#Primero se cargan los datos y librerias
+library(ggplot2)
+library(plotly)
+
+datos <- read.csv("Crime_Data_from_2020_to_Present_20250503.csv")
+
+datos_validos <- subset(datos, Vict.Age > 0)
+
+# Calcular el conteo por tipo de crimen
+conteo_crimenes <- table(datos_validos$Crm.Cd.Desc)
+
+# Obtener solo los crímenes con más de 30,000 casos
+crimenes_frecuentes <- names(conteo_crimenes[conteo_crimenes > 40000])
+
+# Filtrar los datos solo para esos crímenes
+datos_filtrados <- subset(datos_validos, Crm.Cd.Desc %in% crimenes_frecuentes)
+
+# Graficar el boxplot
+grafico <- ggplot(datos_filtrados, aes(x = Crm.Cd.Desc, y = Vict.Age)) +
+  geom_boxplot(fill = "lightblue") +
+  coord_flip() +
+  labs(
+    title = "Distribución de edad de víctimas por tipo de crimen",
+    x = "Tipo de crimen",
+    y = "Edad de la víctima"
+  ) +
+  theme_minimal() +
+  theme(axis.text.y = element_text(size = 6))
+
+ggplotly(grafico)
+
+```
+
+<span style="font-size:13pt">
+La grafica se va a limitar desde los 2 años hasta los 99. No se va a tomar en cuenta de 100 o más ya que no es común que se logre esta fecha en Estados Unidos.  
+Iniciando se puede notar que todos los tipos de crímenes a excepción de Intimate Partner se inicia desde los 2 años (4 en el caso de Intimate partner), esto es curioso ya que uno no se imagina que niños de 2 años podría ser víctima de gran parte de estos crímenes.    
+Si se analiza con detenimiento se puede notar que en todos los crímenes la media de edad en las victimas se encuentra entre los 30 y 40 años. Si se analiza con detenimiento podemos notar que la mayor parte de los Cuartiles 1 y 3 se encuentran entre los 25 y 53 años, esto quiere decir que de las víctimas de todos los tipos de crímenes lo más común es que la gente en ese rango de edad es la que se ve más afectada, esto se puede notar ya que los extremos van desde los 2 hasta los 25 y desde los 50 aproximadamente hasta los 99. Con esto último se puede notar que de entre los 2 hasta los 25 hay un 25% del rango de edad y desde 50 hasta el 99 se encuentra el ultimo 25.    
+Ya que todas poseen una edad minima se va a comparar cuales son los dos crímenes que tienen lo que se va a llamar Edad Alta máxima (En cual crimen el extremo derecho alcanza el valor más alto) y la Edad Alta Minima (En la cual crimen el extremo derecho alcanza el menor valor). En este caso el crimen que tiene la Edad Alta Minima es Intimate Partner con una edad de 64, en el caso de la Edad Alta máxima es asalto simple, siendo que en este caso la mayor edad es 93.  
+</span>
+
+### Segunda grafica
+
+<span style="font-size:13pt">
+En este análisis se examina la relación entre el tipo de arma utilizada en un crimen y el sexo de la víctima. El objetivo es identificar si existen patrones diferenciados según el arma empleada, lo cual puede ser útil para entender las dinámicas de violencia con perspectiva de género.  
+Se seleccionó la variable "Weapon.Desc", que representa la descripción del arma usada en el delito, y la variable "Vict.Sex", que indica el sexo de la víctima. A partir del total de registros, se identificaron las 8 armas más frecuentemente utilizadas en crímenes. Posteriormente, se filtraron solo los casos donde el sexo de la víctima fuera masculino ("M") o femenino ("F") para asegurar consistencia en el análisis.
+</span>
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#Primero se cargan los datos y librerias
+library(ggplot2)
+library(plotly)
+
+datos <- read.csv("Crime_Data_from_2020_to_Present_20250503.csv")
+
+# Contar cuántas veces aparece cada arma
+conteo <- table(datos$Weapon.Desc)
+conteo <- conteo[names(conteo) != ""]  # eliminar las entradas vacías
+
+# Obtener las 8 armas más comunes 
+conteo_filtrado8 <- names(sort(conteo, decreasing = TRUE)[1:8])
+
+# Creamos un nuevo data frame con las siguientes condiciones:
+# - El arma utilizada (Weapon.Desc) está entre las 8 más frecuentes (guardadas en conteo_filtrado8)
+# - El sexo de la víctima (Vict.Sex) es masculino ("M") o femenino ("F")
+datos_filtrado <- subset(datos, Weapon.Desc %in% conteo_filtrado8 & Vict.Sex %in% c("M", "F"))
+
+grafico <- ggplot(datos_filtrado, aes(x = Weapon.Desc, fill = Vict.Sex)) +
+  geom_bar(position = "fill") +
+  theme_minimal() +
+  coord_flip() +
+  labs(title = "Sexo de la víctima según las 8 armas más usadas", 
+       x = "Arma usada", 
+       y = "Número de casos", 
+       fill = "Sexo")
+
+ggplotly(grafico)
+
+
+```
+
+<span style="font-size:13pt">
+Se puede observar un comportamiento en las diferencias de género, en la mayor parte de casos el género que posee la mayor cantidad de crímenes en los que fueron víctimas por un tipo especifico de armas es el masculino, los hombres han sido en mayor parte víctimas de las siguientes armas:  
+- Armas desconocidas  
+- Armas de fuego desconocidas  
+- Armas semiautomáticas  
+- Cuchillas y sus tipos  
+- Armas de mano  
+</span>
+
+<span style="font-size:13pt">
+Mientas que las mujeres han sido víctimas de las siguientes:  
+- Verbal  
+- Física (puños, puño americano y mediante el cuerpo)  
+</span>
+
+<span style="font-size:13pt">
+Esto es importante para aclarar una diferencia, en el caso de las mujeres son las que más han sufrido crímenes que conlleven daño físico o psicológico (esto por el tema verbal), mientras que los hombres son más propensos y se encuentran en mayor cantidad entre las víctimas que sufren por armas ya sean blancas o de fuego.
+</span>
+
+## **Grafica multimidensional**
+
+<span style="font-size:13pt">
+En este analisis se va a realizar la relacion entre los siguientes datos:  
+- Meses  
+- Genero 
+- Codigo de crimen  
+- Area del crimen  
+- Edad y Genero de la victima  
+</span>
+
+<span style="font-size:13pt">
+Con esto se busca encontrar una relacion de comportamiento entre todas estas secciones, tambien cabe aclarar que el tamaño de los puntos que se van a mostrar en la grafica estan de acuerdo al tipo de crimen cometido, siendo el 1 o el más grande uno de los crimenes más serios y el 4 o el pequeño uno de los más leves.  
+</span>
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#Primero se cargan los datos y librerias
+#Primero se cargan los datos y librerias
+library(ggplot2)
+library(GGally)
+library(dplyr)
+library(plotly)
+
+#Se cargan los datos
+datos <- read.csv("Crime_Data_from_2020_to_Present_20250503.csv")
+set.seed(2)
+
+# Convertir a fecha (sin hora)
+datos$DATE.OCC <- as.Date(datos$DATE.OCC, format = "%m/%d/%Y")
+
+# Crear columna con nombre de mes y año
+datos$MesNombre <- format(datos$DATE.OCC, "%B %Y")
+
+datos_filtrados <- datos %>%
+  filter(!is.na(DATE.OCC)) %>%
+  filter(Vict.Sex %in% c("M", "F")) %>%
+  filter(Crm.Cd.1 %in% c(230, 624)) %>%
+  slice_sample(n = 100)  # tomar una muestra aleatoria para aligerar carga
+
+
+grafica <- ggplot(datos_filtrados, aes(x = AREA.NAME, y = Vict.Age, color = Vict.Sex, size = Crm.Cd.1)) +
+  geom_point(alpha = 0.5) +
+  labs(
+    title = "Distribución de Edad por Área y Sexo de la Víctima",
+    x = "Área",
+    y = "Edad de la Víctima")  +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+plotly::ggplotly(grafica)
+```
+
+<span style="font-size:13pt">
+Con la grafica se puede observar lo siguiente:  
+- Con respecto a la edad más alta a la que se sufrio un crimen fue en el caso de una mujer es de 85 años, siendo un crimen serio por el tamaño del punto, en el caso de un hombre es similar el tipo del caso de la mujer lo unico que cambia es su edad siendo de 82.  
+- Con respecto a la edad más baja fue de un bebe masculino de apenas 0 años con un crimen de tipo 1 (el más  serio), en el caso de una mujer fue de 4 años con un delito de tipo 4.  
+</span>
+
+<span style="font-size:13pt">
+Ya con esto resaltado podemos notar que en el area de 77th Street se puede notar que hay un bloque muy marcado en las edades de las victimas, siendo este de 20 hasta los 60. En el area en el que hubo crimenes de tipo 1 fue en Foothill, siendo la zona en la que más delitos de tipo 1 o los más serios ocurrieron, al contrario en Devonshire ocurrieron la mayor cantidad de delitos de tipo 4 (los más leves).  
+Solamente hay 6 casos registrados en el que mayores de edad (de 65 en adelate) se vieron afectados, ya con esto se puede ver que las victimas más frecuentes son las que tienen de esa edad para abajo, incluso tomando curiosamente a niños y a un bebe recien nacido.
+</span>
+
+## **Grafica facetica**
+
+<span style="font-size:13pt">
+
+</span>
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(ggplot2)
+library(GGally)
+library(dplyr)
+library(plotly)
+library(lubridate)
+
+# Cargar datos
+datos <- read.csv("Crime_Data_from_2020_to_Present_20250503.csv")
+
+# Convertir a fecha (sin hora)
+datos$DATE.OCC <- as.Date(datos$DATE.OCC, format = "%m/%d/%Y")
+
+# Crear columna con nombre de mes y año
+datos$MesNombre <- format(datos$DATE.OCC, "%B %Y")  # Ej: "Enero 2022"
+
+# Filtrar y tomar muestra
+set.seed(1)
+
+datos_filtrados <- datos %>%
+  filter(!is.na(DATE.OCC)) %>%
+  filter(AREA.NAME %in% c("Hollywood", "Central","Harbor","Newton")) %>%
+  filter(Vict.Sex %in% c("M", "F")) %>%
+  filter(DATE.OCC >= as.Date("2022-01-01")) %>%
+  slice_sample(n = 1000)
+
+# Para que los meses salgan ordenados cronológicamente
+datos_filtrados$MesNombre <- factor(datos_filtrados$MesNombre,
+                                    levels = unique(format(sort(unique(datos_filtrados$DATE.OCC)), "%B %Y")))
+
+# Crear gráfico
+grafico <- ggplot(datos_filtrados, aes(x = MesNombre, fill = Vict.Sex)) +
+  geom_bar() +
+  facet_wrap(~ AREA.NAME, scales = "free_y") +
+  theme_minimal() +
+  labs(
+    title = "Crímenes por mes, área y género (Muestra de 1000)",
+    x = "Mes del crimen",
+    y = "Cantidad",
+    fill = "Género"
+  ) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))  # Rotar etiquetas para mejor visibilidad
+
+# Hacer interactivo
+ggplotly(grafico)
+```
+
+<span style="font-size:13pt">
+Al iniciar con el analisis de la grafica se puede notar algo en comun con respecto en las 4 zonas, esto siendo que en todas ocurre que las mujeres han sido en más casos victima durante los 3 años en esas zonas, eso comparado con los hombres.  
+Se va a analizar individualmente cada ciudad por individual y luego se hará un analisis de estas ciudades en conjunto
+</span>
+
+<span style="font-size:13pt">
+**Central**
+En los 3 años en los que se analizaron los crimenes y que generos se han visto afectados se puede notar que hay una victima principal, en este caso son las mujeres las que más sobresalen por encima de los hombres, siendo que estos solo las logran superar en un mes, siendo este diciembre de 2024.  
+En la grafica se puede analizar que:  
+- El punto más alto al que llegaron las mujeres fue en abril de 2023 siendo que llegan casi a los 20 crimenes en esa zona, en el caso de los hombres el punto más alto fue en abril de 2023 superando apenas los 15 crimenes.  
+- El punto más bajo para ambos generos fue en el caso de las mujeres en noviembre de 2024 sin ni si quiera superar los 3 crimenes, en el caso de los hombres hay 2 meses en los cuales comparten la minima cantidad de crimenes siendo Octubre y Noviembre de 2024 en ambos casos.  
+- En el caso de los hombres se puede notar que hubo varios meses en los que se mantuvo constante la cantidad de crimenes.  
+</span>
+
+<span style="font-size:13pt">
+**Harbor**
+En esta grafica se puede observar que a diferencia de la anterior hubo meses en los que no se registro ningun crimen para los hombres, siendo curiosamente 4 de ellos. En caso las mujeres solamente muestran un mes en el cual no sufrieron ningun crimen, provocando que uno de los meses no se haya sufrido ningun crimen. En esta grafica los hombres no superan en crimenes a las mujeres en ninguno de los meses.
+En el area de Harpor se puede notar lo siguiente:
+- Al igual que en esta y en las otras graficas las mujeres sufrieron más crimenes.  
+- El punto más alto en el que las mujeres y los hombres sufrieron la mayor cantidad de crimenes fueron: noviembre de 2022 para las mujeres con 10 casos y para los hombres fue en el mismo mes con casi 7 crimenes.  
+- En el caso de los meses con la minima cantidad de crimenes son los siguientes: Enero de 2023, Mayo, Octubre y Noviembre los 3 de 2024 con 0 casos, a diferencia de las mujeres que tienen 0 en solamente un mes, siendo este Noviembre de 2024.  
+- Ambos generon muestran bastantes meses en los que se mantuvo constante la cantidad de crimenes.  
+</span>
+
+<span style="font-size:13pt">v
+**Hollywood**
+En esta grafica ocurre lo siguiente:  
+- Hubo dos meses en los que hubo la mayor cantidad de crimenes en los que sufrieron las mujeres, siendo en los meses Junio y Julio de 2022, siendo que durante dos meses el pico de crimenes fue constante con aproximadamente 15 casos, en el caso de los hombres fue en diciembre de 2023 con aproximadamente 8 casos.  
+-Al igual que en el pasado la cantidad minima de crimenes fue de dos meses en los cuales no hubo ninguno para los hombres, los meses son Junio y Agosto de 2024, en el caso de las mujeres el pico más bajo ocurre solamente en Julio de 2024 con 0.
+</span>
+
+<span style="font-size:13pt">
+**Newton**
+En esta zona se puede observar algo peculiar, y es que en los ultimos 4 meses no hubo ningun crimen en el que como victimas principales se vieran afectado hombres. Ademas de esto se puede observar lo siguiente:  
+- El pico más alto de crimenes en el que las mujeres se vieron afectadas fue en julio de 2023 con casi 12 casos, en el de los hombres fue en mayo de 2022 con 8 casos.  
+- El pico más bajo de los hombres como se menciono anteriormente fue de 0 en los ultimos 4 meses del año 2024, en el de las mujeres fue 0 unicamente en Octubre y Diciembre de 2024.  
+</span>
+
+<span style="font-size:13pt">
+**Analisis general**
+Como ya se ha mencionado anteriormente, en todas las ciudades se puede observar que las mujeres en todos los años han sido las más afectadas, siendo que en muy pocos meses no se han llegado a ver afectadas. Con esto se puede comprobar que en los crimenes lo que más se busca son las mujeres, esto a diferencia de los hombres en los que se puede notar que hay incluso meses en los que de manera continua sus casos no aumentan ni a 1, tambien se puede notar que solamente entre 2 y 3 meses estos superaron por muy poco la cantidad de crimenes que las mujeres. Tambien se puede notar que en el unico area en el que ocurre que no se haya sufrido 0 crimenes es en Hollywood
+</span>
+
+
+## **Grafica compuesta**
+
+<span style="font-size:13pt">
+ Para este análisis se utilizaron datos que incluyen el estado del caso indicados por IC(Continua la investigacion),AA(Hubo un Arresto hacia un adutl) y AO(Hubo alguna accion hacia el adulto pero no fue un arresto). y la ciudad a la cual pertenece el caso. Lo que nos permite diferenciar si fue resuelto o si aún está en investigación.
+</span>
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(plotly)
+library(dplyr)
+
+datos <- read.csv("Crime_Data_from_2020_to_Present_20250503.csv")
+
+# Filtrar estados
+datos_filtrados <- datos[datos$Status %in% c("IC", "AO","AA"), ]
+
+# Total de delitos por ciudad
+totales <- table(datos$AREA.NAME)
+top15_ciudades <- names(sort(totales, decreasing = TRUE))[1:15]
+
+# Filtrar para las 15 ciudades más frecuentes
+totales_top <- totales[top15_ciudades]
+filtrados_top <- datos_filtrados[datos_filtrados$AREA.NAME %in% top15_ciudades, ]
+
+# Conteo por ciudad y estado
+conteo_status <- table(filtrados_top$AREA.NAME, filtrados_top$Status)
+conteo_df <- as.data.frame(conteo_status)
+colnames(conteo_df) <- c("Ciudad", "Estado", "Cantidad")
+
+# Convertir totales a data frame
+totales_df <- data.frame(Ciudad = names(totales_top),
+                         Total = as.integer(totales_top))
+
+# Crear gráfico interactivo paso a paso usando plot_ly
+graficoI <- plot_ly()  # Se inicializa un objeto vacío de plotly para ir agregando trazas (barras, líneas, etc.)
+
+# Añadir barras para el total de delitos por ciudad
+graficoI <- add_bars(graficoI, data = totales_df, x = ~Ciudad, y = ~Total, name = "Total", marker = list(color = 'lightblue'))
+
+# Añadir líneas y puntos para cada estado (IC, AO, AA)
+estados <- unique(conteo_df$Estado)
+for (estado in estados) {
+  df_estado <- conteo_df %>% filter(Estado == estado)
+  
+  graficoI <- add_trace(graficoI,
+                        data = df_estado,
+                        x = ~Ciudad,
+                        y = ~Cantidad,
+                        type = 'scatter',
+                        mode = 'lines+markers',
+                        name = estado)
+}
+
+# Configurar título, etiquetas y estilo del eje Y para evitar notación compacta como "46.9k"
+graficoI <- layout(graficoI,
+                   title = "Delitos totales por ciudad y casos IC / AO / AA",
+                   xaxis = list(title = "Ciudad"),
+                   yaxis = list(title = "Cantidad de delitos", tickformat = ",d"),
+                   barmode = 'group')
+
+# Mostrar el gráfico
+graficoI
+```
+
+<span style="font-size:13pt">
+Gracias a la gráfica se puede observar que las divisiones con mayor cantidad de delitos registrados son Central, 77th Street y Pacific, superando los 60,000 casos en algunos casos. Esto indica una mayor concentración de actividades delictivas en estas zonas, posiblemente relacionadas con factores como densidad poblacional o ubicación geográfica. También se destaca que la mayoría de los delitos están clasificados bajo el estado IC (Investigación Continua), lo que sugiere que una gran proporción de los casos aún no han sido resueltos. En contraste, los estados AA (arresto de adulto) y AO (acción contra adulto sin arresto) muestran cifras mucho menores. Los demas estados no se añadieron debido al ser tan pocos no proporcionarian buena informacion comparada a la de los Estados "AO" y "AA"
+</span>
+
+# **Conclusion**
+<span style="font-size:13pt">
+Ahora que se han analizado todos los tipos de graficas podemos hacer un análisis en general de todos los datos usados y sacar conclusiones.    
+Lo primero es que en la mayoría de las gráficas se analiza a las víctimas comparándolas por su género y edad en distintas ciudades y tipos de crímenes. Gracias a ello nos hemos dado cuenta de que las mujeres son las principales víctimas de los crímenes en las ciudades que logramos analizar, esto a diferencia de los hombres en los que incluso en bastantes meses no hubo crímenes e incluso nunca llegaron a superar la cantidad de crímenes. Esto es curioso ya que con la gráfica que podemos analizar podemos darnos cuenta de que, pese a que no superan a las mujeres en eso, si lo hacen y por mucho en los tipos de crímenes cometidos, notando que en esto ellas sufren en mayor medida crímenes que contengan daño que fue hecho física o verbalmente, en cambio los hombres sufren más crímenes en los que son usados armas blancas o de fuego.    
+Lo segundo es resaltar las edades, siendo que para estos crímenes se nota un patrón en la edad de las víctimas, siendo que la mayor cantidad de ellos se encuentran entre personas con las edades de 25 a 50 aproximadamente. Esto no excluye a mayores de edad o recién nacidos, siendo que aun con estos rangos hemos podido observar cómo han sido víctimas de crímenes muy serios.  
+Lo último a resaltar es la hora en la que suelen suceder estos crímenes, la hora más común es a las 12 o en el medio día, siendo este el pico más alto, esto se puede analizar a la par de las zonas más peligrosas de Los Ángeles, viendo como a pesar de ser una ciudad que se puede decir que es muy concurrida no quita que a plena luz del día y algunas horas de la noche se pueda observar cómo aumenta la tasa de criminalidad.  
+
+</span>
